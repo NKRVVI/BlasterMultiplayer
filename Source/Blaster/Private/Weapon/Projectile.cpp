@@ -9,6 +9,8 @@
 #include "Sound/SoundCue.h"
 #include "Character/BlasterCharacter.h"
 #include "Blaster/Blaster.h"
+#include "NiagaraFunctionLibrary.h"
+
 
 AProjectile::AProjectile()
 {
@@ -41,9 +43,31 @@ void AProjectile::BeginPlay()
 	}
 }
 
+void AProjectile::StartDestroyTimer()
+{
+	GetWorldTimerManager().SetTimer(DestroyTimer, this, &ThisClass::DestroyTimerFinished, DestroyTime);
+
+}
+
 void AProjectile::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
 {
 	Multicast_OnHit(bHitPlayer);
+}
+
+void AProjectile::SpawnTrailSystem()
+{
+	if (TrailSystem)
+	{
+		TrailSystemComponent = UNiagaraFunctionLibrary::SpawnSystemAttached(
+			TrailSystem,
+			GetRootComponent(),
+			FName(),
+			GetActorLocation(),
+			GetActorRotation(),
+			EAttachLocation::KeepWorldPosition,
+			false
+		);
+	}
 }
 
 void AProjectile::Multicast_OnHit_Implementation(bool bPlayerHit)
@@ -70,10 +94,44 @@ void AProjectile::Destroyed()
 	{
 		UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ImpactParticles, GetActorTransform());
 	}
+	else if(WallImpactParticles)
+	{
+		UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), WallImpactParticles, GetActorTransform());
+	}
 
 	if (ImpactSound)
 	{
 		UGameplayStatics::PlaySoundAtLocation(this, ImpactSound, GetActorLocation());
+	}
+}
+
+void AProjectile::DestroyTimerFinished()
+{
+	Destroy();
+}
+
+void AProjectile::ExplodeDamage()
+{
+	APawn* FiringPawn = GetInstigator();
+	if (FiringPawn && HasAuthority())
+	{
+		AController* FiringController = FiringPawn->GetController();
+		if (FiringController)
+		{
+			UGameplayStatics::ApplyRadialDamageWithFalloff(
+				this, //world context object
+				Damage, //base damage
+				10.f, //minimum damage
+				GetActorLocation(), //origin
+				200.f, //damage inner radius
+				500.f, //damage outer radius
+				1.f, // damage falloff
+				UDamageType::StaticClass(), //damage type class
+				TArray<AActor*>(), //ignored actors
+				this, //damage causer
+				FiringController // instigator controller
+			);
+		}
 	}
 }
 

@@ -26,7 +26,7 @@ public:
 	void PlayFireMontage(bool bAiming);
 	void PlayReloadMontage();
 	void PlayElimMontage();
-
+	void PlayThrowGrenadeMontage();
 	virtual void OnRep_ReplicatedMovement() override;
 	void Elim();
 	UFUNCTION(NetMulticast, Reliable)
@@ -71,6 +71,8 @@ protected:
 	void FireButtonReleased(const FInputActionInstance& InputActionValue);
 	UFUNCTION()
 	void ReloadButtonPressed(const FInputActionInstance& InputActionValue);
+	UFUNCTION()
+	void GrenadeButtonPressed(const FInputActionInstance& InputActionValue);
 
 	void AimOffset(float DeltaTime);
 	void CalculateAO_Pitch();
@@ -121,6 +123,9 @@ protected:
 	UPROPERTY(EditDefaultsOnly)
 	UInputAction* ReloadInput;
 
+	UPROPERTY(EditDefaultsOnly)
+	UInputAction* GrenadeButtonPressedInput;
+
 private:
 	UPROPERTY(VisibleAnywhere)
 	class USpringArmComponent* CameraBoom;
@@ -164,6 +169,9 @@ private:
 
 	UPROPERTY(EditAnywhere, Category = Combat)
 	class UAnimMontage* ElimMontage;
+
+	UPROPERTY(EditAnywhere, Category = Combat)
+	class UAnimMontage* ThrowGrenadeMontage;
 
 	void HideCameraIfCharacterClose();
 
@@ -242,6 +250,13 @@ private:
 	UPROPERTY()
 	class ABlasterPlayerState* BlasterPlayerState;
 
+	/*
+		Grenade
+	*/
+
+	UPROPERTY(VisibleAnywhere)
+	UStaticMeshComponent* AttachedGrenade;
+
 public:
 	void SetOverlappingWeapon(AWeapon* Weapon);
 	bool bIsWeaponEquipped();
@@ -260,4 +275,6 @@ public:
 	ECombatState GetCombatState() const;
 	FORCEINLINE UCombatComponent* GetCombat() const { return Combat; }
 	FORCEINLINE bool GetDisableGameplay() const { return bDisableGameplay; }
+	FORCEINLINE UAnimMontage* GetReloadMontage() const { return ReloadMontage; }
+	FORCEINLINE UStaticMeshComponent* GetAttachedGrenade() const { return AttachedGrenade; }
 };

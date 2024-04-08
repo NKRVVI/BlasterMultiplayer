@@ -27,6 +27,20 @@ UCombatComponent::UCombatComponent()
 }
 
 
+void UCombatComponent::PickupAmmo(EWeaponType WeaponType, int32 AmmoAmount)
+{
+	if (CarriedAmmoMap.Contains(WeaponType))
+	{
+		CarriedAmmoMap[WeaponType] = FMath::Clamp(CarriedAmmoMap[WeaponType] + AmmoAmount, 0, MaxCarriedAmmo);
+
+		UpdateCarriedAmmo();
+	}
+	if (EquippedWeapon && EquippedWeapon->IsEmpty() && EquippedWeapon->GetWeaponType() == WeaponType)
+	{
+		Reload();
+	}
+}
+
 // Called when the game starts
 void UCombatComponent::BeginPlay()
 {
@@ -335,6 +349,7 @@ void UCombatComponent::LaunchGrenade()
 	if (Character && Character->IsLocallyControlled())
 	{
 		ServerLaunchGrenade(HitTarget);
+		UE_LOG(LogTemp, Warning, TEXT("Launching grenade"));
 	}
 }
 
@@ -342,6 +357,7 @@ void UCombatComponent::ServerLaunchGrenade_Implementation(const FVector_NetQuant
 {
 	if (Character && GrenadeClass && Character->GetAttachedGrenade())
 	{
+		UE_LOG(LogTemp, Warning, TEXT(" grenade"));
 		const FVector StartingLocation = Character->GetAttachedGrenade()->GetComponentLocation();
 		FVector ToTarget = Target - StartingLocation;
 		FActorSpawnParameters SpawnParams;
@@ -350,6 +366,7 @@ void UCombatComponent::ServerLaunchGrenade_Implementation(const FVector_NetQuant
 		if (UWorld* World = GetWorld())
 		{
 			World->SpawnActor<AProjectile>(GrenadeClass, StartingLocation, ToTarget.Rotation(), SpawnParams);
+			UE_LOG(LogTemp, Warning, TEXT("spawning grenade"));
 		}
 	}
 }
@@ -458,6 +475,7 @@ void UCombatComponent::ThrowGrenade()
 
 	if (Character && Character->HasAuthority())
 	{
+		Grenades = FMath::Clamp(Grenades - 1, 0, MaxGrenades);
 		UpdateHUDGrenades();
 	}
 }
@@ -473,6 +491,7 @@ void UCombatComponent::ServerThrowGrenade_Implementation()
 		ShowAttachedGrenade(true);
 	}
 
+	UE_LOG(LogTemp, Warning, TEXT("updating grenade"));
 	Grenades = FMath::Clamp(Grenades - 1, 0, MaxGrenades);
 	UpdateHUDGrenades();
 }

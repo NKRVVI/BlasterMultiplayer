@@ -23,6 +23,7 @@
 #include "Particles/ParticleSystemComponent.h"
 #include "PlayerState/BlasterPlayerState.h"
 #include "Weapon/WeaponTypes.h"
+#include "BlasterComponents/BuffComponent.h"
 
 
 ABlasterCharacter::ABlasterCharacter()
@@ -64,6 +65,9 @@ ABlasterCharacter::ABlasterCharacter()
 	AttachedGrenade = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Grenade"));
 	AttachedGrenade->SetupAttachment(GetMesh(), FName("GrenadeSocket"));
 	AttachedGrenade->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+	Buff = CreateDefaultSubobject<UBuffComponent>(TEXT("BuffComponent"));
+	Buff->SetIsReplicated(true);
 }
 
 void ABlasterCharacter::OnRep_ReplicatedMovement()
@@ -262,6 +266,11 @@ void ABlasterCharacter::PostInitializeComponents()
 	if (Combat)
 	{
 		Combat->Character = this;
+	}
+
+	if (Buff)
+	{
+		Buff->Character = this;
 	}
 }
 
@@ -679,10 +688,13 @@ float ABlasterCharacter::CalculateSpeed()
 	return Velocity.Size();
 }
 
-void ABlasterCharacter::OnRep_Health()
+void ABlasterCharacter::OnRep_Health(float LastHealth)
 {
 	UpdateHUDHealth();
-	PlayHitReactMontage();
+	if (Health < LastHealth)
+	{
+		PlayHitReactMontage();
+	}
 }
 
 void ABlasterCharacter::UpdateDissolveMaterial(float DissolveValue)

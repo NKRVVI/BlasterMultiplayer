@@ -34,6 +34,9 @@ private:
 	UPROPERTY(EditAnywhere)
 	UStaticMeshComponent* PickupMesh;
 
-public:
+	UPROPERTY(VisibleAnywhere)
+	class UNiagaraComponent* PickupEffectComponent;
 
+	UPROPERTY(EditAnywhere)
+	class UNiagaraSystem* PickupEffect;
 };
